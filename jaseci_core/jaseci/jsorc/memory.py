@@ -249,10 +249,11 @@ class MemoryHook:
         return self.file_handlers.pop(file_id, None)
 
     def clean_file_handler(self):
-        for file_handler in list(self.file_handlers.values()):
-            self.file_handlers.pop(file_handler.id, None)
-            if not file_handler.persist:
-                file_handler.delete()
+        if hasattr(self, 'file_handlers'):
+            for file_handler in list(self.file_handlers.values()):
+                self.file_handlers.pop(file_handler.id, None)
+                if not file_handler.persist:
+                    file_handler.delete()
 
     def __del__(self):
         self.clean_file_handler()
