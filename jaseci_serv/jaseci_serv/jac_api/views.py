@@ -27,12 +27,14 @@ class JResponse(Response):
         super().__init__(*args, **kwargs)
         self.hook = master._h
         self.hook.commit_all_cache_sync()
+        self.hook.clean_file_handler()
+        self.hook.commit(True)
 
     def close(self):
         super(JResponse, self).close()
         # Commit db changes after response to user
-        self.hook.clean_file_handler()
-        self.hook.commit(True)
+        # self.hook.clean_file_handler()
+        # self.hook.commit(True)
 
 
 class JFileResponse(FileResponse):
