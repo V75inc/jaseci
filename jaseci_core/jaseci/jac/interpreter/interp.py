@@ -156,13 +156,15 @@ class Interp(VirtualMachine):
         self._jac_try_mode += 1
         try:
             self.run_code_block(kid[1])
+            self._jac_try_mode -= 1
         except TryException as e:
+            self._jac_try_mode -= 1
             if len(kid) > 2:
                 self.run_else_from_try(kid[2], e.ref)
         except Exception as e:
+            self._jac_try_mode -= 1
             if len(kid) > 2:
                 self.run_else_from_try(kid[2], self.jac_exception(e, kid[2]))
-        self._jac_try_mode -= 1
 
     def run_else_from_try(self, jac_ast, jac_ex):
         """
@@ -324,13 +326,24 @@ class Interp(VirtualMachine):
         """
         destroy_action: KW_DESTROY expression SEMI;
         """
+        from jaseci.prim.ability import Ability
+
         kid = self.set_cur_ast(jac_ast)
         self.run_expression(kid[1])
         result = self.pop()
+
+        destroy_node_ids = None
+        if isinstance(self, Ability):
+            # currently, only walker process destroy_node_ids
+            # ability should be able to trigger destroy but still connected to current walker
+            destroy_node_ids = self._jac_scope.local_scope["visitor"].destroy_node_ids
+        else:
+            destroy_node_ids = self.destroy_node_ids
+
         if isinstance(result.value, Element):
-            self.destroy_node_ids.add_obj(result.value)
+            destroy_node_ids.add_obj(result.value)
         elif isinstance(result.value, JacSet):
-            self.destroy_node_ids.add_obj_list(result.value)
+            destroy_node_ids.add_obj_list(result.value)
         result.self_destruct(kid[1])
 
     def run_report_action(self, jac_ast):

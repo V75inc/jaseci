@@ -34,7 +34,6 @@ class Ability(Element, JacCode, Interp):
         """
         Run ability
         """
-        Interp.__init__(self)  # Reset before as result need to be absorbed after
         self.push_scope(
             JacScope(
                 parent=self,
@@ -66,22 +65,17 @@ class Ability(Element, JacCode, Interp):
         action_manager.pre_action_call_hook()
 
         ts = time.time()
-        if "meta" in args:
-            result = func(
-                *param_list["args"],
-                **param_list["kwargs"],
-                meta={
+        try:
+            if "meta" in args:
+                param_list["kwargs"]["meta"] = {
                     "m_id": scope.parent._m_id,
                     "h": scope.parent._h,
                     "scope": scope,
                     "interp": interp,
-                },
-            )
-        else:
-            try:
-                result = func(*param_list["args"], **param_list["kwargs"])
-            except Exception as e:
-                interp.rt_error(e, jac_ast, True)
+                }
+            result = func(*param_list["args"], **param_list["kwargs"])
+        except Exception as e:
+            interp.rt_error(e, jac_ast, True)
         t = time.time() - ts
         action_manager.post_action_call_hook(action_name, t)
         return result
